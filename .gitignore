@@ -1,0 +1,9 @@
+.DS\_Store
+.bundle
+db/**/*.sqlite3
+db/persvr/*
+log/*.log
+public/stylesheets/compiled/*
+tmp/**/*
+vendor/persevere/*
+
