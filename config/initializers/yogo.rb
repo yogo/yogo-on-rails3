@@ -7,6 +7,10 @@
 
 require 'facet'
 require 'datamapper/property/raw'
+require 'yogo_data_form_builder'
+require 'yogo_form_builder'
+require 'yogo/chainable'
+require 'yogo/project_ext'
 
 # Load the Application Version
 load Rails.root / "VERSION"
