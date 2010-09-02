@@ -21,9 +21,19 @@ module Facet
     alias can_invoke? can_invoke
     
     def permitted_methods
-      permissions = @target.permissions_for(@permission_source)
-      permissions = permissions | @root_target.permissions_for(@permission_source) unless @root_target.nil?
-      @target.methods_permitted_for(*permissions) 
+      ::DataMapper.repository(:default) {
+        permissions = @target.permissions_for(@permission_source)
+        permissions = permissions | @root_target.permissions_for(@permission_source) unless @root_target.nil?
+        @target.methods_permitted_for(*permissions)
+     }
+    end
+    
+    def permitted_actions
+     ::DataMapper.repository(:default) {
+       permissions = @target.permissions_for(@permission_source)
+       permissions = permissions | @root_target.permissions_for(@permission_source) unless @root_target.nil?
+       @target.actions_permitted_for(*permissions)
+      }
     end
     
     def method_missing(method, *args, &block)
@@ -32,20 +42,33 @@ module Facet
     
     def send(method, *args, &block)
       # ::Rails.logger.debug("Can #{@permission_source} Invoke? #{method} #{can_invoke method}")
+      raise NoMethodError, "undefined method #{method} for #{@target}" unless @target.respond_to?(method) || permitted_methods.include?(method.to_sym)
       if(can_invoke method)
         result = @target.__send__(method, *args, &block)
+        # TODO: Extract out this DataMapper specific code
         if (result.kind_of?(::DataMapper::Collection) && result.model.respond_to?(:access_as)) ||
            (result.kind_of?(::DataMapper::Resource)   && result.respond_to?(:access_as))
-          # Reuse the current_root target, or use the current target if it's an instance, not a class
-          root_target = @root_target || !@target.kind_of?(::Class) ? @target : nil
-          return result.access_as(@permission_source, root_target)
+          # Reuse the current root_target, or use the current target if it's an instance, not a class
+          return result.access_as(@permission_source, next_root_target)
         else
           return result
         end
       else
         # logger.debug { "Access denied to method #{method}" }
-        ::Rails.logger.debug("Access denied to method #{method}")
-        raise Facet::PermissionException::Denied, "#{method} is not allowed"
+        ::Rails.logger.info("Access denied to method #{method} on #{@target}")
+        raise Facet::PermissionException::Denied, "#{method} on #{@target} is not allowed"
+      end
+    end
+    
+    def each(&block)
+      @target.__send__(:each) do |i|
+        if !i.is_facet? && i.respond_to?(:access_as)
+          # ::Rails.logger.debug("This should do something")
+          yield i.access_as(@permission_source, next_root_target)
+        else
+          # ::Rails.logger.debug("This is calling my each")
+          yield i
+        end
       end
     end
     
@@ -56,6 +79,40 @@ module Facet
     def permission_source
       @permission_source
     end
+    
+    def root_target
+      @root_target
+    end
+    
+    # Reuse the current root_target, or use the current target if it's an instance, not a class
+    def next_root_target
+      if !@root_target.nil?
+        return @root_target
+      elsif @target.kind_of?(::DataMapper::Resource )
+        @target
+      else
+        return nil
+      end
+    end
+    
+    def can_create?
+      permitted_actions.include?(:create)
+    end
+    
+    def can_retrieve?
+      permitted_actions.include?(:retrieve)
+    end
+    alias can_read? can_retrieve?
+    
+    def can_update?
+      permitted_actions.include?(:update)
+    end
+    
+    def can_destroy?
+      permitted_actions.include?(:destroy)
+    end
+    alias can_delete? can_destroy?
+    
   end
   
   class PermissionException < Exception
@@ -67,7 +124,7 @@ module Facet
   module SecurityWrapper
     def access_as(access = nil, root_target = nil)
       # When running in local only, bypass all access by returning self
-      if Yogo::Setting[:local_only]
+      if ::DataMapper.repository(:default) { Setting[:local_only] }
         self
       else
         Facet::Proxy.new(self, access, root_target)
@@ -104,6 +161,7 @@ module Facet
     end
     
     def unsecured_instance_methods
+      # TODO: Evaluate what instance methods should be unsecured
       [:debugger, :class, :empty?, :is_a?, :nil?, :respond_to?, :to_param, :valid?]  
       # self.instance_methods.map{ |k| k.to_sym }) - secured_instance_methods
       # self.instance_methods - secured_instance_methods
@@ -141,7 +199,17 @@ module Facet
       end
       methods.flatten.uniq
     end
-        
+       
+    def actions_permitted_for(*perms)
+      actions = []
+      perms.each do |pstring|
+        name, perm = pstring.split('$')
+        next unless permission_base_name == name
+        actions << perm.to_sym
+      end
+      actions.flatten.uniq
+    end
+    
     def permission_base_name
       ""
     end
@@ -154,8 +222,9 @@ module Facet
     def permissions
       {
         :create => [:new, :create],
-        :retrieve => [:all, :get, :first, :last, :count] + relationships.keys.map{|m| m.to_s.pluralize.to_sym } +
-        self.methods.map{|m| m.to_sym },
+        :retrieve => [:all, :get, :first, :last, :count, :map, :each, :&, :|] + 
+          relationships.keys.map{|m| m.to_s.to_sym } +
+          self.methods.map{|m| m.to_sym } - [:update, :destroy, :new, :create, :create!],
         :update => [:update],
         :destroy => [:destroy]
       }
@@ -177,8 +246,8 @@ module Facet
     def permissions
       {
         :create => [],
-        :retrieve => [:attributes] + self.methods.map{ |k| k.to_sym },
-        :update => [:attributes=, :save, :update],
+        :retrieve => [:attributes] + self.methods.map{ |k| k.to_sym } - [:attributes=, :save, :update, :save_parents, :save_children, :destroy, :destroy!],
+        :update => [:attributes=, :save, :update, :save_parents, :save_children],
         :destroy => [:destroy]
       }
     end
