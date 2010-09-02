@@ -4,11 +4,15 @@ class UsersController < InheritedResources::Base
   protected
 
   def resource
-    @user ||= collection.get(params[:id])
+    @user ||= resource_class.get(params[:id])
   end
   
   def collection
-    @users ||= User.all
+    @users ||= resource_class.paginate(:page => params[:page])
+  end
+  
+  def resource_class
+    User
   end
   
 end

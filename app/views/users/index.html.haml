@@ -1,0 +1,24 @@
+#content-actions= link_to("Add User", new_user_path, :class => 'icon icon-add')
+
+%table
+  %thead
+    %tr
+      %th Login
+      %th First Name
+      %th Last Name
+      %th Email
+      %th Created
+      %th Last Login
+  %tbody
+    - for user in @users
+      %tr
+        %td= link_to(user.login, edit_user_path(user))
+        %td= user.first_name
+        %td= user.last_name
+        %td= user.email
+        %td
+          %center= user.created_at.nil? ? '' : user.created_at.strftime("%m/%d/%Y %I:%M %p")
+        %td
+          %center= user.last_sign_in_at.nil? ? '' : user.last_sign_in_at.strftime("%m/%d/%Y %I:%M %p")
+
+#pagination-links= will_paginate(@users)
