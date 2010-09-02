@@ -24,12 +24,12 @@
         beta
     - unless Yogo::Setting['local_only']
       #login-links
-        - if logged_in?
+        - if user_signed_in?
           = link_to(current_user.login, edit_user_path(current_user))
           |
-          = link_to("logout", logout_path)
+          = link_to("logout", destroy_user_session_path)
         - else
-          = link_to("Login", login_path)
+          = link_to("Login", new_user_session_path)
     =clear_break
     #menu.rbox.tight
       = render(:partial => 'layouts/menu_links') unless @no_menu
