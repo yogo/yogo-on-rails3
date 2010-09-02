@@ -1,5 +1,14 @@
 Yogo::Application.routes.draw do
 
+  namespace :yogo do
+    resources :projects do
+      resources :collections do
+        resources :items
+        resources :properties
+      end
+    end
+  end
+
   # resource :user_session, :only => [ :show, :new, :create, :destory ]
   # match '/logout' => 'user_sessions#destroy', :as => :logout
   # match '/login'  => 'user_sessions#new',     :as => :login
@@ -59,7 +68,7 @@ Yogo::Application.routes.draw do
 
   resources :users
   
-  root :to => "users#index"
+  root :to => "yogo/projects#index"
 
   # See how all your routes lay out with "rake routes"
 
