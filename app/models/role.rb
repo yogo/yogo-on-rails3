@@ -17,7 +17,7 @@ class Role
   property :actions, Yaml, :default => [].to_yaml
 
   has n, :memberships
-  has n, :projects, :through => :memberships, :class => 'Yogo::Project'
+  # has n, :projects, :through => :memberships, :class => 'Yogo::Project'
   has n, :users, :through => :memberships
 
   is :list
