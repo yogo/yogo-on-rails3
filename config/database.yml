@@ -1,7 +1,7 @@
 defaults: &defaults
   adapter: sqlite
 
-yogo: &yogo
+persevere: &yogo
   adapter: persevere
   versioned: true
   host: localhost
