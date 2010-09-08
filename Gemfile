@@ -52,12 +52,7 @@ group :development, :test do
   platforms(:mri_19){ gem 'ruby-debug19'}
   platforms(:mri_18){ gem 'ruby-debug'}
   gem 'yard'
-  gem 'rspec',              RSPEC_VERSION
-  gem 'rspec-core',         RSPEC_VERSION, :require => 'rspec/core'
-  gem 'rspec-expectations', RSPEC_VERSION, :require => 'rspec/expectations'
-  gem 'rspec-mocks',        RSPEC_VERSION, :require => 'rspec/mocks'
-  gem 'rspec-rails',        RSPEC_VERSION
-  
+
   # To get a detailed overview about what queries get issued and how long they take
    # have a look at rails_metrics. Once you bundled it, you can run
    #
@@ -73,3 +68,14 @@ group :development, :test do
    # gem 'rails_metrics', '~> 0.1', :git => 'git://github.com/engineyard/rails_metrics'
 end
 
+group :test do
+  gem 'rspec',              RSPEC_VERSION
+  gem 'rspec-core',         RSPEC_VERSION, :require => 'rspec/core'
+  gem 'rspec-expectations', RSPEC_VERSION, :require => 'rspec/expectations'
+  gem 'rspec-mocks',        RSPEC_VERSION, :require => 'rspec/mocks'
+  gem 'rspec-rails',        RSPEC_VERSION
+  gem 'factory_girl'
+  gem 'factory_girl_rails'
+end
+
+gem 'mongrel', '~>1.2.0.pre2', :require => nil
