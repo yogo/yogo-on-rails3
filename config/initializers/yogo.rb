@@ -5,6 +5,7 @@
 #   FileUtils.mkdir_p(File.join(Rails.root, Yogo::Setting['asset_directory']))
 # end
 
+require 'yogo/datamapper/pagination'
 require 'yogo/project_ext'
 
 # Load the Application Version
