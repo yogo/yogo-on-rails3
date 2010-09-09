@@ -13,7 +13,7 @@ module Yogo
   # 
   # @author Robbie Lamb robbie.lamb@gmail.com
   class Setting
-    include DataMapper::Resource  
+    include ::DataMapper::Resource  
 
     # puts "Loading Yogo::Setting"
 
