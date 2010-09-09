@@ -5,15 +5,10 @@ class Yogo::ItemsController < Yogo::BaseController
   belongs_to :project, :parent_class => Yogo::Project, :finder => :get, :collection_name => :data_collections
   belongs_to :data_collection, :parent_class => Yogo::Collection::Data, :finder => :get, :param => :collection_id
   
-  def paginated_scope(relation)
-    instance_variable_set("@items", relation.paginate(:page => params[:page], :per_page => 25))
-  end
-  hide_action :paginated_scope
-  
   protected
   
   def collection
-    @items ||= end_of_association_chain.all #paginate(:page => params[:page], :per_page => 25)
+    @items ||= end_of_association_chain.all
   end
   
   def resource
@@ -58,7 +53,7 @@ class Yogo::ItemsController < Yogo::BaseController
       data_collection.schema.map{|s| s.name }.join(',') << "\n"
     end
     
-    def resource_csv(resource)
+    def collection_csv(resource)
       data_collection = controller.send(:parent)
       result = ''
       resource.each do |item|
